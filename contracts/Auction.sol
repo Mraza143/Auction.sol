@@ -14,7 +14,6 @@ contract Auction is  KeeperCompatibleInterface {
     
     
      struct Auction {
-
         uint32  i_interval; // For How much time does the nft seller want the auction to continue
         uint128 minPrice; // The price of the nft  at which the auction will start
         uint256 s_lastTimeStamp; //The time at which the auction will start
@@ -47,31 +46,57 @@ contract Auction is  KeeperCompatibleInterface {
     //AuctionState private s_auctionState = AuctionState.CLOSE;
     //uint256 private immutable i_interval = 180;
     //uint256 private s_lastTimeStamp;
-    mapping(address => uint256) private s_addressToAmountFunded;
+    //mapping(address => uint256) private s_addressToAmountFunded;
+
+    //This Function will be called by the nft owner to initialize the auction and specify
+    // and specify their  custom parameters
+    //The user will have the choice to specify for how many duration does he want the auction to continue
+    // And what will be the starting price of the nft
+     function  InitializeAuction(
+        address _nftContractAddress,
+        uint256 _tokenId,
+        uint128 _minPrice,
+        uint32 interval
+    )
+        public 
+    {
+        nftContractAuctions[_nftContractAddress][_tokenId].i_interval = interval;
+        nftContractAuctions[_nftContractAddress][_tokenId].minPrice = _minPrice;
+        nftContractAuctions[_nftContractAddress][_tokenId].nftSeller = msg.sender;
+        nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp = block.timestamp;
+    }
 
 
-     function makeBid() public payable {
-        if (msg.value < temporaryHighestBid ) {
+    //This function will be called whenever a contract will make a bid
+     function makeBid(
+         address _nftContractAddress,
+         uint256 _tokenId
+     ) public payable {
+        if (msg.value <  nftContractAuctions[_nftContractAddress][_tokenId].minPrice ) {
             revert Auction__SendMoreToMakeBid();
         }
-        if (msg.value < i_originalPrice ) {
+        if (msg.value < nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid ) {
             revert Auction__SendMoreToMakeBid();
         }
-        if(auctionStarted){
-           returnLoser = s_adressesToBid[currentWinner];
-            (bool success, ) = currentWinner.call{value: returnLoser}("");
-        }
 
-        temporaryHighestBid= msg.value;
-        s_bidders.push(payable(msg.sender));
-        currentWinner = payable(msg.sender);
-        s_adressesToBid[msg.sender]= msg.value;
-        s_auctionState = AuctionState.OPEN;
-        s_lastTimeStamp = block.timestamp;
+        //We need to call this function everytime except the first bid as there will be no one to 
+        //receive their failed bids
+
+        if(nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted){
+           //returnLoser = s_adressesToBid[currentWinner];
+            (bool success, ) = nftContractAuctions[_nftContractAddress][_tokenId].currentWinner.call{value: nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid}("");
+        }
+        nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted = true;
+        nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid= msg.value;
+        nftContractAuctions[_nftContractAddress][_tokenId].s_bidders.push(payable(msg.sender));
+        nftContractAuctions[_nftContractAddress][_tokenId].currentWinner = payable(msg.sender);
+        nftContractAuctions[_nftContractAddress][_tokenId].s_adressesToBid[msg.sender]= msg.value;
+
+        
         // (bool success, ) = address(this).call{value: msg.value}("");
         // require(success, "Transfer failed");
-         s_addressToAmountFunded[msg.sender] += msg.value;
-        auctionStarted = true;
+         nftContractAuctions[_nftContractAddress][_tokenId].s_addressToAmountFunded[msg.sender] += msg.value;
+
 
 
     }

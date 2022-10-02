@@ -2,8 +2,14 @@
 
 pragma solidity ^0.8.7;
 
-import "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
-error Lottery__UpkeepNotNeeded(uint256 lotteryState);
+/*
+    ******************************************************
+
+                POSSIBLE ERRORS WHICH CAN BE EXPECTED DURING EXECUTION
+
+    ******************************************************
+
+*/
 error Auction__AuctionHasEnded();
 error Auction__SendMoreToMakeBid();
 error Auction__TransferFailed();
@@ -12,6 +18,10 @@ contract Auction {
     //mapping from a nft(adress + token Id) to a Auction
     mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
 
+    //This is how our Action Object Will look Like
+    //This will have the following properties
+    //Out o these , the user will have the ability to customize 2 of them which are minprice and interval
+    
     struct Auction {
         uint32 i_interval; // For How much time does the nft seller want the auction to continue
         uint128 minPrice; // The price of the nft  at which the auction will start
@@ -43,7 +53,9 @@ contract Auction {
     }
 
     //This function will be called whenever a address  will make a bid
-
+    // We will do all the necessary checks that whether our bid is valid or not
+    //After the checks we will change the state variable of the smart contract
+    //After changing the state we will transfer funds from the adress who made the bid to contract
 
     function makeBid(address _nftContractAddress, uint256 _tokenId) public payable {
          //We need to call this if statetement to check whether the bid amount is grater than the previous 
@@ -85,7 +97,18 @@ contract Auction {
         ] += msg.value;
     }
 
-    //This function will return a temporary highes bid for a specific Nft Auction
+
+/*
+    ******************************************************
+
+                GETTER FUNCTIONS PUBLIC
+
+    ******************************************************
+
+*/
+
+
+    //This function will return a temporary highest bid for a specific Nft Auction
     //At the end of the auction it will automatically be the final price for which the nft has been sold
     //If the nft does not get sold it will remain in its default value ie 0
     function getTemporaryHighestBid(address _nftContractAddress, uint256 _tokenId)
@@ -94,5 +117,16 @@ contract Auction {
         returns (uint256)
     {
         return nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid;
+    }
+
+     //This function will return a temporary highest bidder for a specific Nft Auction(current winner)
+    //At the end of the auction it will automatically be the adrees to which the nft has been sold
+    //If the nft does not get sold it will remain in its default value ie 0x0000000000000000...
+    function getCurrentWinner(address _nftContractAddress, uint256 _tokenId)
+        public
+        view
+        returns (address)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].currentWinner;
     }
 }

@@ -28,10 +28,3 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
 module.exports.tags = ["all", "fundme"]
 
-
-/*An Auction Contract
-Many contracts can make a bid
-A contract can not make consecutive bid
-The highest bidder will get asset(could be anything)
-The amount will be transferred from highest bidder
-All the remaining bidders will be transfered back their eth.*/

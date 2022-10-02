@@ -3,11 +3,11 @@
 pragma solidity ^0.8.7;
 
 /*
-    ******************************************************
+    **************************************************************************************
 
                 POSSIBLE ERRORS WHICH CAN BE EXPECTED DURING EXECUTION
 
-    ******************************************************
+    ***************************************************************************************
 
 */
 error Auction__AuctionHasEnded();
@@ -17,6 +17,16 @@ error Auction__TransferFailed();
 contract Auction {
     //mapping from a nft(adress + token Id) to a Auction
     mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
+
+
+    /*
+    **************************************************************************************
+
+                STRUCTURES USED FOR THE SMART CONTRACT
+
+    ***************************************************************************************
+
+*/
 
     //This is how our Action Object Will look Like
     //This will have the following properties
@@ -129,4 +139,63 @@ contract Auction {
     {
         return nftContractAuctions[_nftContractAddress][_tokenId].currentWinner;
     }
+
+
+     //This function will return a interval for which the auction will continue(in seconds) for a specific Nft Auction(current winner)
+
+    function getIntervalOfNftAuction(address _nftContractAddress, uint256 _tokenId)
+        public
+        view
+        returns (uint32)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].i_interval;
+    }
+
+
+     //This function will return the beggining price provided to us the by the nft seller
+
+    function getBeginningPriceOfTheNft(address _nftContractAddress, uint256 _tokenId)
+        public
+        view
+        returns (uint128)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].minPrice;
+    }
+
+
+    //This function will return the beggining price provided to us the by the nft seller
+
+    function getSellerOfTheNft(address _nftContractAddress, uint256 _tokenId)
+        public
+        view
+        returns (address)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].nftSeller;
+    }
+
+
+
+    //This function will return the time at which the Auction started in epoch Time
+
+    function getStartingTimeOfAuction(address _nftContractAddress, uint256 _tokenId)
+        public
+        view
+        returns (uint256)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp;
+    }
+
+
+    //This function will return whether the Auction is ongoing or not
+
+    function getStateOfAuction(address _nftContractAddress, uint256 _tokenId)
+        public
+        view
+        returns (bool)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted;
+    }
+
+
+
 }

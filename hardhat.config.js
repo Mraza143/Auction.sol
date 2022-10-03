@@ -50,7 +50,7 @@ module.exports = {
     },
     contractSizer: {
         runOnCompile: false,
-        only: ["Lottery"],
+        only: ["Auction"],
     },
     namedAccounts: {
         deployer: {

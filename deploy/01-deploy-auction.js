@@ -8,7 +8,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const chainId = network.config.chainId
 
     log("----------------------------------------------------")
-    log("Deploying Lottery and waiting for confirmations...")
+    log("Deploying Auction and waiting for confirmations...")
     const auction = await deploy("Auction", {
         from: deployer,
         args: [],
@@ -16,7 +16,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         // we need to wait if on a live network so we can verify properly
         waitConfirmations: network.config.blockConfirmations || 1,
     })
-    log(`Lottery deployed at ${auction.address}`)
+    log(`Auction deployed at ${auction.address}`)
 
     if (
         !developmentChains.includes(network.name) &&
@@ -26,5 +26,5 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 }
 
-module.exports.tags = ["all", "fundme"]
+module.exports.tags = ["all", "auction"]
 

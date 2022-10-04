@@ -15,6 +15,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 error Auction__AuctionHasEnded();
 error Auction__SendMoreToMakeBid();
 error Auction__TransferFailed();
+error Auction__NotAuctionWinner();
+error Auction__AuctionNotEndedYet();
 
 contract Auction {
     //mapping from a nft(adress + token Id) to a Auction
@@ -101,7 +103,6 @@ contract Auction {
         //We basically revert the transaction if the Auction Time has ended
 
         if (
-            nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted &&
             block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp >
             nftContractAuctions[_nftContractAddress][_tokenId].i_interval
         ) {
@@ -138,6 +139,31 @@ contract Auction {
             msg.sender
         ] += msg.value;
     }
+
+    //This function will be called by nft auction winner and it will transfer the nft from contract 
+    //to theadress of the nft winner
+    function receiveNft(address _nftContractAddress, uint256 _tokenId) public{
+        //Checking if the caller is the nft auction winner
+        if(
+            msg.sender!=nftContractAuctions[_nftContractAddress][_tokenId].currentWinner
+            ){
+            revert Auction__NotAuctionWinner();
+        }
+        //Checking if the auction has ended
+         if (
+            block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp <
+            nftContractAuctions[_nftContractAddress][_tokenId].i_interval
+        ) {
+            revert Auction__AuctionNotEndedYet();
+    }
+    //Transfering the nft to the winner
+    IERC721(_nftContractAddress).transferFrom(
+                address(this),
+                msg.sender,               
+                _tokenId
+            );
+    }
+    
 
 
 /*

@@ -17,6 +17,8 @@ error Auction__SendMoreToMakeBid();
 error Auction__TransferFailed();
 error Auction__NotAuctionWinner();
 error Auction__AuctionNotEndedYet();
+error Auction__NotAuctionNftSeller();
+error Auction__AuctionHaveBids();
 
 contract Auction {
     //mapping from a nft(adress + token Id) to a Auction
@@ -162,7 +164,39 @@ contract Auction {
                 msg.sender,               
                 _tokenId
             );
+  }
+
+    //This function will be called by the seller of the nft if there was no bid on the auction
+    //Meaning the Auction Failed
+    function withdrawNft(address _nftContractAddress, uint256 _tokenId) public{
+        //Checking if the caller is the nft auction seller
+        if(
+            msg.sender!=nftContractAuctions[_nftContractAddress][_tokenId].nftSeller
+            ){
+            revert Auction__NotAuctionNftSeller();
+        }
+        //Checking if the auction has ended
+         if (
+            block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp <
+            nftContractAuctions[_nftContractAddress][_tokenId].i_interval
+        ) {
+            revert Auction__AuctionNotEndedYet();
     }
+    //Checking if the auction had no bids
+         if (
+nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
+        ) {
+            revert Auction__AuctionHaveBids();
+    }
+
+
+    //Transfering the nft to the seller from the contract
+    IERC721(_nftContractAddress).transferFrom(
+                address(this),
+                nftContractAuctions[_nftContractAddress][_tokenId].nftSeller,               
+                _tokenId
+            );
+  }
     
 
 

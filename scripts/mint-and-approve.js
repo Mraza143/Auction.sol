@@ -14,14 +14,25 @@ async function mintAndApproave() {
     const tokenId = mintTxReceipt.events[0].args.tokenId
 
      //We are approving the auction contract adress for the minted nft so that it can transfer the nft
-    console.log("Approving NFT...")
-    console.log(tokenId.toString());
+    //console.log("Approving NFT...")
+    //console.log(tokenId.toString());
+    
     const approvalTx = await erc721Mock.approve(auction.address, tokenId)
+    console.log(` before approaved to ${auction.address}`)
     await approvalTx.wait(1)
-   
-    if (network.config.chainId == 31337) {
+    console.log(`after approaved to ${auction.address}`)
+    console.log(tokenId.toString());
 
-    }
+    console.log("getting the owner of token")
+    const owner = await erc721Mock.ownerOf(tokenId);
+    console.log(owner);
+
+
+    console.log("get Approved")
+    const approved = await erc721Mock.getApproved(tokenId);
+    console.log(approved);
+
+
 }
 
 mintAndApproave()

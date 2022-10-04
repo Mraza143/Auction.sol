@@ -20,6 +20,7 @@ contract Auction {
     //mapping from a nft(adress + token Id) to a Auction
     mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
 
+
     /*
     **************************************************************************************
 
@@ -31,8 +32,8 @@ contract Auction {
 
     //This is how our Action Object Will look Like
     //This will have the following properties
-    //Out of these , the user will have the ability to customize 2 of them which are minprice and interval
-
+    //Out o these , the user will have the ability to customize 2 of them which are minprice and interval
+    
     struct Auction {
         uint32 i_interval; // For How much time does the nft seller want the auction to continue
         uint128 minPrice; // The price of the nft  at which the auction will start
@@ -65,18 +66,19 @@ contract Auction {
 
         //Now transfering the Nft from the seller to this contract adress
         //We will transfer only if the creator of auction is the owner of Nft .
-        if (IERC721(_nftContractAddress).ownerOf(_tokenId) == msg.sender) {
-            IERC721(_nftContractAddress).transferFrom(msg.sender, address(this), _tokenId);
+        require(IERC721(_nftContractAddress).ownerOf(_tokenId) == msg.sender,
+        "You dont own the nft"
+        );
+
+            IERC721(_nftContractAddress).transferFrom(
+                msg.sender,
+                address(this),
+                _tokenId
+            );
             require(
                 IERC721(_nftContractAddress).ownerOf(_tokenId) == address(this),
                 "failed to tranfer nft"
             );
-        } else {
-            require(
-                IERC721(_nftContractAddress).ownerOf(_tokenId) == address(this),
-                "Seller doesn't own NFT"
-            );
-        }
     }
 
     //This function will be called whenever a address  will make a bid
@@ -85,7 +87,7 @@ contract Auction {
     //After changing the state we will transfer funds from the adress who made the bid to contract
 
     function makeBid(address _nftContractAddress, uint256 _tokenId) public payable {
-        //We need to call this if statetement to check whether the bid amount is grater than the previous
+         //We need to call this if statetement to check whether the bid amount is grater than the previous 
         //bid and also better than the minimum price setted by the nft seller
 
         if (
@@ -103,24 +105,15 @@ contract Auction {
             block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp >
             nftContractAuctions[_nftContractAddress][_tokenId].i_interval
         ) {
-            //If this if statement return true then this means the auction period has ended but no
+            //If this if statement return true then this means the auction period has ended but no 
             //one has bided for the nft
-            if (
-                nftContractAuctions[_nftContractAddress][_tokenId].minPrice ==
-                nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
-            ) {
+            if(nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid){
                 ///We transfer the nft back to the seller from the contract
-                IERC721(_nftContractAddress).transferFrom(address(this),
-                 nftContractAuctions[_nftContractAddress][_tokenId].nftSeller,
-                  _tokenId);
-            }
-            //Else Block Means the Auction Ended succesfully
-            //We will now transfer the nft to the winner(Highest Bidder)
-            //We will transfer the funds of the nft auction to the nft seller
-            else{
-                IERC721(_nftContractAddress).transferFrom(address(this),
-                nftContractAuctions[_nftContractAddress][_tokenId].currentWinner ,
-                  _tokenId);
+                IERC721(_nftContractAddress).transferFrom(
+                address(this),
+                msg.sender,               
+                _tokenId
+            );
             }
             revert Auction__AuctionHasEnded();
         }
@@ -146,7 +139,8 @@ contract Auction {
         ] += msg.value;
     }
 
-    /*
+
+/*
     ******************************************************
 
                 GETTER FUNCTIONS PUBLIC
@@ -154,6 +148,7 @@ contract Auction {
     ******************************************************
 
 */
+
 
     //This function will return a temporary highest bid for a specific Nft Auction
     //At the end of the auction it will automatically be the final price for which the nft has been sold
@@ -166,7 +161,7 @@ contract Auction {
         return nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid;
     }
 
-    //This function will return a temporary highest bidder for a specific Nft Auction(current winner)
+     //This function will return a temporary highest bidder for a specific Nft Auction(current winner)
     //At the end of the auction it will automatically be the adrees to which the nft has been sold
     //If the nft does not get sold it will remain in its default value ie 0x0000000000000000...
     function getCurrentWinner(address _nftContractAddress, uint256 _tokenId)
@@ -177,7 +172,8 @@ contract Auction {
         return nftContractAuctions[_nftContractAddress][_tokenId].currentWinner;
     }
 
-    //This function will return a interval for which the auction will continue(in seconds) for a specific Nft Auction(current winner)
+
+     //This function will return a interval for which the auction will continue(in seconds) for a specific Nft Auction(current winner)
 
     function getIntervalOfNftAuction(address _nftContractAddress, uint256 _tokenId)
         public
@@ -187,7 +183,8 @@ contract Auction {
         return nftContractAuctions[_nftContractAddress][_tokenId].i_interval;
     }
 
-    //This function will return the beggining price provided to us the by the nft seller
+
+     //This function will return the beggining price provided to us the by the nft seller
 
     function getBeginningPriceOfTheNft(address _nftContractAddress, uint256 _tokenId)
         public
@@ -196,6 +193,7 @@ contract Auction {
     {
         return nftContractAuctions[_nftContractAddress][_tokenId].minPrice;
     }
+
 
     //This function will return the beggining price provided to us the by the nft seller
 
@@ -207,6 +205,8 @@ contract Auction {
         return nftContractAuctions[_nftContractAddress][_tokenId].nftSeller;
     }
 
+
+
     //This function will return the time at which the Auction started in epoch Time
 
     function getStartingTimeOfAuction(address _nftContractAddress, uint256 _tokenId)
@@ -217,6 +217,7 @@ contract Auction {
         return nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp;
     }
 
+
     //This function will return whether the Auction is ongoing or not
 
     function getStateOfAuction(address _nftContractAddress, uint256 _tokenId)
@@ -226,4 +227,7 @@ contract Auction {
     {
         return nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted;
     }
+
+
+
 }

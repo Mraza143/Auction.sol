@@ -23,6 +23,10 @@ contract ERC721Mock is ERC721 {
         s_tokenCounter = s_tokenCounter + 1;
     }
 
+    function mint(address to, uint256 tokenId) external {
+        _mint(to, tokenId);
+    }
+
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
         return TOKEN_URI;

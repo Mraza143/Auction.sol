@@ -44,4 +44,55 @@ describe("NFTAuction", function () {
 
     assert.equal(auctionInterval, interval)
   });
+
+
+
+  it("Initialize Auction initializes minPrice correctly", async function () {
+    await nftAuction.connect(user1).InitializeAuction(erc721.address, tokenId ,minPrice , interval)
+    const auctionMinPrice = await nftAuction.connect(user1).getBeginningPriceOfTheNft(erc721.address,tokenId)
+    assert.equal(auctionMinPrice, minPrice)
+  });
+
+  it("reverts if the msg.sender is not the nft owner", async function () {
+    await expect(nftAuction.connect(user2).InitializeAuction(erc721.address, tokenId ,minPrice , interval)).to.be.revertedWith( // is reverted as raffle is calculating
+    "You dont own the nft"
+)
+    /*expect(await nftAuction.connect(user2).InitializeAuction(erc721.address, tokenId ,minPrice , interval)).to.be.revertedWith(
+      "You dont own the nft")*/
+
+    })
+
+  it("Initialize Auction initializes temporary Highest Bid correctly", async function () {
+    await nftAuction.connect(user1).InitializeAuction(erc721.address, tokenId ,minPrice , interval)
+    const auctionTemporaryHighestPrice = await nftAuction.connect(user1).getTemporaryHighestBid(erc721.address,tokenId)
+
+    assert.equal(auctionTemporaryHighestPrice, minPrice)
+  });
+
+
+  it("Initialize Auction initializes nft seller correctly", async function () {
+    await nftAuction.connect(user1).InitializeAuction(erc721.address, tokenId ,minPrice , interval)
+    const auctionnftSeller = await nftAuction.connect(user1).getSellerOfTheNft(erc721.address,tokenId)
+
+    assert.equal(auctionnftSeller, user1.address)
+  });
+
+
+  it("the contract is now the owner of the nft", async function () {
+    await nftAuction.connect(user1).InitializeAuction(erc721.address, tokenId ,minPrice , interval)
+    //const auctionnftSeller = await nftAuction.connect(user1).getSellerOfTheNft(erc721.address,tokenId)
+    const owner = await erc721.ownerOf(tokenId);
+    assert.equal(owner, nftAuction.address)
+  });
+
+
+  it("Initialize Auction initializes nft starting time correctly", async function () {
+
+    await nftAuction.connect(user1).InitializeAuction(erc721.address, tokenId ,minPrice , interval)
+    const auctionStartingTime = await nftAuction.connect(user1).getStartingTimeOfAuction(erc721.address,tokenId)
+    const bNumBefore = await ethers.provider.getBlockNumber();
+    const bBefore = await ethers.provider.getBlock(bNumBefore);
+    const timestampB = bBefore.timestamp;
+    assert.equal(auctionStartingTime, timestampB);
+  });
 });

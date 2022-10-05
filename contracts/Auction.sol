@@ -20,12 +20,9 @@ error Auction__AuctionNotEndedYet();
 error Auction__NotAuctionNftSeller();
 error Auction__AuctionHaveBids();
 error Auction__AuctionDontHaveBids();
+error Auction__NotNftOwner();
 
 contract Auction {
-    //mapping from a nft(adress + token Id) to a Auction
-    mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
-
-
     /*
     **************************************************************************************
 
@@ -34,7 +31,6 @@ contract Auction {
     ***************************************************************************************
 
 */
-
     //This is how our Action Object Will look Like
     //This will have the following properties
     //Out o these , the user will have the ability to customize 2 of them which are minprice and interval
@@ -107,6 +103,124 @@ contract Auction {
         
     );
 
+     //State Variables
+
+     //mapping from a nft(adress + token Id) to a Auction
+    mapping(address => mapping(uint256 => Auction)) public nftContractAuctions;
+
+
+     /*
+    **************************************************************************************
+
+                MODIFIERS TO ENHANCE CODE READABLITY
+
+    ***************************************************************************************
+
+*/
+//This Modifier will check whether the caller of function is indeed the owner of the nft
+modifier isOwner(
+        address nftAddress,
+        uint256 tokenId,
+        address spender
+    ) {
+        IERC721 nft = IERC721(nftAddress);
+        address owner = nft.ownerOf(tokenId);
+        if (spender != owner) {
+            revert Auction__NotNftOwner();
+        }
+        _;
+    }
+
+//This modifier will check whether the bid made is a valid bid by checking if the msg.value is grater than
+//the minimum price of the nft as well as the previous Highest bid
+
+modifier isBidValid(
+        address nftAddress,
+        uint256 tokenId,
+        uint256 bidAmount
+    ) {
+        if (bidAmount < nftContractAuctions[nftAddress][tokenId].temporaryHighestBid
+        ) {
+            revert Auction__SendMoreToMakeBid();
+        }
+        _;
+    }
+
+//This modifier will check whether the auction has ended or not
+
+modifier isAuctionEnded(
+        address nftAddress,
+        uint256 tokenId
+    ) {
+          if (
+            block.timestamp - nftContractAuctions[nftAddress][tokenId].s_lastTimeStamp >
+            nftContractAuctions[nftAddress][tokenId].i_interval
+        ) {
+            revert Auction__AuctionHasEnded();
+        }
+        _;
+    }
+
+
+//This modifier will check whether the caller of the function is the auction winner
+
+modifier isAuctionWinner(
+        address nftAddress,
+        uint256 tokenId,
+        address sender
+    ) {
+          if(
+            sender!=nftContractAuctions[nftAddress][tokenId].currentWinner
+            ){
+            revert Auction__NotAuctionWinner();
+        }
+        _;
+    }
+
+
+//This modifier will check whether the caller of the function is the seller of the nft or not
+
+modifier isAuctionNftSeller(
+        address nftAddress,
+        uint256 tokenId,
+        address sender
+    ) {
+          if(
+            sender!=nftContractAuctions[nftAddress][tokenId].nftSeller
+            ){
+            revert Auction__NotAuctionNftSeller();
+        }
+        _;
+    }
+
+//This modifier will check whether the auction has any bids
+
+modifier isAuctionBidded(
+        address nftAddress,
+        uint256 tokenId
+    ) {
+        if(
+            nftContractAuctions[nftAddress][tokenId].minPrice!=nftContractAuctions[nftAddress][tokenId].temporaryHighestBid
+        ){
+            revert Auction__AuctionHaveBids();
+    }
+        _;
+    }
+
+//This modifier will check whether the auction has no bids
+
+modifier isAuctionNotBidded(
+        address nftAddress,
+        uint256 tokenId
+    ) {
+        if (
+nftContractAuctions[nftAddress][tokenId].minPrice==nftContractAuctions[nftAddress][tokenId].temporaryHighestBid
+        ) {
+            revert Auction__AuctionDontHaveBids();
+    }
+        _;
+    }
+
        /*
     **************************************************************************************
 
@@ -125,18 +239,15 @@ contract Auction {
         uint256 _tokenId,
         uint256 _minPrice,
         uint32 interval
-    ) public {
+    ) public
+    isOwner(_nftContractAddress , _tokenId , msg.sender)
+     {
         nftContractAuctions[_nftContractAddress][_tokenId].i_interval = interval;
         nftContractAuctions[_nftContractAddress][_tokenId].minPrice = _minPrice;
         nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid = _minPrice;
         nftContractAuctions[_nftContractAddress][_tokenId].nftSeller = msg.sender;
         nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp = block.timestamp;
 
-        //Now transfering the Nft from the seller to this contract adress
-        //We will transfer only if the creator of auction is the owner of Nft .
-        require(IERC721(_nftContractAddress).ownerOf(_tokenId) == msg.sender,
-        "You dont own the nft"
-        );
 
             IERC721(_nftContractAddress).transferFrom(
                 msg.sender,
@@ -153,7 +264,7 @@ contract Auction {
                 msg.sender,
                 _minPrice,
                 interval
-            )
+            );
     }
 
     //This function will be called whenever a address  will make a bid
@@ -161,27 +272,15 @@ contract Auction {
     //After the checks we will change the state variable of the smart contract
     //After changing the state we will transfer funds from the adress who made the bid to contract
 
-    function makeBid(address _nftContractAddress, uint256 _tokenId) public payable {
-         //We need to call this if statetement to check whether the bid amount is grater than the previous 
-        //bid and also better than the minimum price setted by the nft seller
+    function makeBid(
+        address _nftContractAddress,
+        uint256 _tokenId)
+          public
+          payable
+          isBidValid(_nftContractAddress,_tokenId, msg.value)
+          isAuctionEnded(_nftContractAddress,_tokenId)
 
-        if (
-            msg.value < nftContractAuctions[_nftContractAddress][_tokenId].minPrice ||
-            msg.value < nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
-        ) {
-            revert Auction__SendMoreToMakeBid();
-        }
-
-        //We need to call this function everytime except the first bid as the auction would not have properly started
-        //We basically revert the transaction if the Auction Time has ended
-
-        if (
-            block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp >
-            nftContractAuctions[_nftContractAddress][_tokenId].i_interval
-        ) {
-            revert Auction__AuctionHasEnded();
-        }
-
+            {
         //We need to call this function everytime except the first bid as there will be no one to
         //receive their failed bids
 
@@ -207,7 +306,7 @@ contract Auction {
                 _tokenId,
                 msg.sender,
                 msg.value
-            )
+            );
     }
        /*
     **************************************************************************************
@@ -220,20 +319,14 @@ contract Auction {
 
     //This function will be called by nft auction winner and it will transfer the nft from contract 
     //to theadress of the nft winner
-    function receiveNft(address _nftContractAddress, uint256 _tokenId) public{
-        //Checking if the caller is the nft auction winner
-        if(
-            msg.sender!=nftContractAuctions[_nftContractAddress][_tokenId].currentWinner
-            ){
-            revert Auction__NotAuctionWinner();
-        }
-        //Checking if the auction has ended
-         if (
-            block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp <
-            nftContractAuctions[_nftContractAddress][_tokenId].i_interval
-        ) {
-            revert Auction__AuctionNotEndedYet();
-    }
+    function receiveNft(
+        address _nftContractAddress,
+        uint256 _tokenId)
+          public
+          isAuctionEnded(_nftContractAddress,_tokenId)
+          isAuctionWinner(_nftContractAddress,_tokenId,msg.sender)
+          {
+
     //Transfering the nft to the winner
     IERC721(_nftContractAddress).transferFrom(
                 address(this),
@@ -245,33 +338,21 @@ contract Auction {
                 _nftContractAddress,
                 _tokenId,
                 msg.sender,
-                nftContractAuctions[_nftContractAddress][_tokenId].temporary                
-            )
+                nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid              
+            );
   }
 
     //This function will be called by the seller of the nft if there was no bid on the auction
     //Meaning the Auction Failed
-    function withdrawNft(address _nftContractAddress, uint256 _tokenId) public{
-        //Checking if the caller is the nft auction seller
-        if(
-            msg.sender!=nftContractAuctions[_nftContractAddress][_tokenId].nftSeller
-            ){
-            revert Auction__NotAuctionNftSeller();
-        }
-        //Checking if the auction has ended
-         if (
-            block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp <
-            nftContractAuctions[_nftContractAddress][_tokenId].i_interval
-        ) {
-            revert Auction__AuctionNotEndedYet();
-    }
-    //Checking if the auction had no bids
-         if (
-nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
-        ) {
-            revert Auction__AuctionHaveBids();
-    }
-
+    function withdrawNft(
+        address _nftContractAddress,
+        uint256 _tokenId)
+        public
+        isAuctionEnded(_nftContractAddress,_tokenId)
+        isAuctionNftSeller(_nftContractAddress,_tokenId,msg.sender)
+        isAuctionBidded(_nftContractAddress,_tokenId)
+        
+        {
 
     //Transfering the nft to the seller from the contract
     IERC721(_nftContractAddress).transferFrom(
@@ -282,32 +363,19 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
             emit WithdrawNftAfterAuctionUnsuccesful(
                 _nftContractAddress,
                 _tokenId,
-                msg.sender,
-            )
+                msg.sender
+            );
   }
 
   //This function will be called by the seller of the nft if the auction was succesful
-  function withdrawWinningBid(address _nftContractAddress, uint256 _tokenId) public{
-        //Checking if the caller is the nft auction seller
-        if(
-            msg.sender!=nftContractAuctions[_nftContractAddress][_tokenId].nftSeller
-            ){
-            revert Auction__NotAuctionNftSeller();
-        }
-        //Checking if the auction has ended
-         if (
-            block.timestamp - nftContractAuctions[_nftContractAddress][_tokenId].s_lastTimeStamp <
-            nftContractAuctions[_nftContractAddress][_tokenId].i_interval
-        ) {
-            revert Auction__AuctionNotEndedYet();
-    }
-    //Checking if the auction had  bids
-         if (
-nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
-        ) {
-            revert Auction__AuctionDontHaveBids();
-    }
-
+  function withdrawWinningBid(
+    address _nftContractAddress,
+    uint256 _tokenId)
+     public
+     isAuctionEnded(_nftContractAddress,_tokenId)
+     isAuctionNftSeller(_nftContractAddress,_tokenId,msg.sender)
+     isAuctionNotBidded(_nftContractAddress,_tokenId)
+     {
 
     //Transfering the winning bid to the nft seller account
     (bool success, ) = nftContractAuctions[_nftContractAddress][_tokenId]
@@ -321,7 +389,7 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
                 _tokenId,
                 msg.sender,
                 nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
-            )
+            );
   }
 /*
     ******************************************************

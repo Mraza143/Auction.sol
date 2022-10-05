@@ -41,13 +41,12 @@ contract Auction {
     
     struct Auction {
         uint32 i_interval; // For How much time does the nft seller want the auction to continue
-        uint128 minPrice; // The price of the nft  at which the auction will start
+        uint256 minPrice; // The price of the nft  at which the auction will start
         uint256 s_lastTimeStamp; //The time at which the auction will start
         address payable[] s_bidders; // The colletion of all the adresses which have made a bid for the nft
         mapping(address => uint256) s_adressesToBid; //A mapping of all the addresses to their bid , so we can return their amount in case their bid did not win nft
         mapping(address => uint256) s_addressToAmountFunded; // A mapping to receive bids
         uint256 temporaryHighestBid; // The highest bid made for a nft at any given moment
-        uint128 nftHighestBid; //The bid which won the nft
         address payable currentWinner; //The adress which is currently winning the auction , at the end of the auction , this will automatically get set to the final winner
         address nftSeller; // The address of the seller of the nft
         bool auctionStarted; // A bool to keep track whether the auction has started or not ;
@@ -67,7 +66,7 @@ contract Auction {
         address indexed nftAdress,
         uint256 indexed tokenId,
         address indexed nftSellerAdress,
-        uint128 minprice,
+        uint256 minprice,
         uint32 interval
     );
 
@@ -77,7 +76,7 @@ contract Auction {
         address indexed nftAdress,
         uint256 indexed tokenId,
         address indexed bidMakerAddress,
-        uint128 price
+        uint256 price
     );
 
 //This Event will be emitted when a  auction winner receives the nft After the auction has ended
@@ -85,7 +84,7 @@ contract Auction {
         address indexed nftAdress,
         uint256 indexed tokenId,
         address indexed nftWinnerAddress,
-        uint128 finalPrice
+        uint256 finalPrice
     );
 
 
@@ -94,7 +93,7 @@ contract Auction {
  event WithdrawNftAfterAuctionUnsuccesful(
         address indexed nftAdress,
         uint256 indexed tokenId,
-        address indexed nftsellerAddress,
+        address indexed nftsellerAddress
     );
 
 
@@ -104,7 +103,7 @@ contract Auction {
         address indexed nftAdress,
         uint256 indexed tokenId,
         address indexed nftsellerAddress,
-        uint128 winning Bid
+        uint256 winningBid
         
     );
 
@@ -124,7 +123,7 @@ contract Auction {
     function InitializeAuction(
         address _nftContractAddress,
         uint256 _tokenId,
-        uint128 _minPrice,
+        uint256 _minPrice,
         uint32 interval
     ) public {
         nftContractAuctions[_nftContractAddress][_tokenId].i_interval = interval;
@@ -148,6 +147,13 @@ contract Auction {
                 IERC721(_nftContractAddress).ownerOf(_tokenId) == address(this),
                 "failed to tranfer nft"
             );
+            emit AuctionInitialized(
+                _nftContractAddress,
+                _tokenId,
+                msg.sender,
+                _minPrice,
+                interval
+            )
     }
 
     //This function will be called whenever a address  will make a bid
@@ -195,6 +201,13 @@ contract Auction {
         nftContractAuctions[_nftContractAddress][_tokenId].s_addressToAmountFunded[
             msg.sender
         ] += msg.value;
+
+        emit BidMade(
+                _nftContractAddress,
+                _tokenId,
+                msg.sender,
+                msg.value
+            )
     }
        /*
     **************************************************************************************
@@ -227,6 +240,13 @@ contract Auction {
                 msg.sender,               
                 _tokenId
             );
+
+            emit WinNftAfterAuction(
+                _nftContractAddress,
+                _tokenId,
+                msg.sender,
+                nftContractAuctions[_nftContractAddress][_tokenId].temporary                
+            )
   }
 
     //This function will be called by the seller of the nft if there was no bid on the auction
@@ -259,6 +279,11 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
                 nftContractAuctions[_nftContractAddress][_tokenId].nftSeller,               
                 _tokenId
             );
+            emit WithdrawNftAfterAuctionUnsuccesful(
+                _nftContractAddress,
+                _tokenId,
+                msg.sender,
+            )
   }
 
   //This function will be called by the seller of the nft if the auction was succesful
@@ -290,6 +315,13 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
                 .call{
                 value: nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid//At this point the temporary highestbid will become the highest bid
             }("");
+
+            emit ReceiveWinningBidAfterAuction(
+                _nftContractAddress,
+                _tokenId,
+                msg.sender,
+                nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
+            )
   }
 /*
     ******************************************************
@@ -339,7 +371,7 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
     function getBeginningPriceOfTheNft(address _nftContractAddress, uint256 _tokenId)
         public
         view
-        returns (uint128)
+        returns (uint256)
     {
         return nftContractAuctions[_nftContractAddress][_tokenId].minPrice;
     }

@@ -394,7 +394,7 @@ nftContractAuctions[nftAddress][tokenId].minPrice==nftContractAuctions[nftAddres
     address _nftContractAddress,
     uint256 _tokenId)
      public
-     isAuctionEnded(_nftContractAddress,_tokenId)
+     isAuctionNotEnded(_nftContractAddress,_tokenId)
      isAuctionNftSeller(_nftContractAddress,_tokenId,msg.sender)
      isAuctionNotBidded(_nftContractAddress,_tokenId)
      {
@@ -405,6 +405,7 @@ nftContractAuctions[nftAddress][tokenId].minPrice==nftContractAuctions[nftAddres
                 .call{
                 value: nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid//At this point the temporary highestbid will become the highest bid
             }("");
+            require(success, "Transfer failed");
 
             emit ReceiveWinningBidAfterAuction(
                 _nftContractAddress,

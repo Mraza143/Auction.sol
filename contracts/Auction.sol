@@ -146,7 +146,7 @@ modifier isBidValid(
         _;
     }
 
-//This modifier will check whether the auction has ended or not
+//This modifier will check whether the auction has ended 
 
 modifier isAuctionEnded(
         address nftAddress,
@@ -160,6 +160,22 @@ modifier isAuctionEnded(
         }
         _;
     }
+
+//This modifier will check whether the auction has ended 
+
+modifier isAuctionNotEnded(
+        address nftAddress,
+        uint256 tokenId
+    ) {
+          if (
+            block.timestamp - nftContractAuctions[nftAddress][tokenId].s_lastTimeStamp <
+            nftContractAuctions[nftAddress][tokenId].i_interval
+        ) {
+            revert Auction__AuctionNotEndedYet();
+        }
+        _;
+    }
+
 
 
 //This modifier will check whether the caller of the function is the auction winner
@@ -329,7 +345,7 @@ nftContractAuctions[nftAddress][tokenId].minPrice==nftContractAuctions[nftAddres
         address _nftContractAddress,
         uint256 _tokenId)
           public
-          isAuctionEnded(_nftContractAddress,_tokenId)
+          isAuctionNotEnded(_nftContractAddress,_tokenId)
           isAuctionWinner(_nftContractAddress,_tokenId,msg.sender)
           {
 

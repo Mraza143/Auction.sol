@@ -15,3 +15,4 @@ artifacts
 gas-report.txt
 deployments
 .notes.md
+yarn-error.log

@@ -53,6 +53,61 @@ contract Auction {
         bool auctionStarted; // A bool to keep track whether the auction has started or not ;
     }
 
+     /*
+    **************************************************************************************
+
+                EVENTS WHICH WILL BE EMITTED DURING EXECUTION OF SMART CONTRACT
+
+    ***************************************************************************************
+
+*/
+
+//This event will be emitted when a instance of Auction is inititialized by the seller
+  event AuctionInitialized(
+        address indexed nftAdress,
+        uint256 indexed tokenId,
+        address indexed nftSellerAdress,
+        uint128 minprice,
+        uint32 interval
+    );
+
+    
+//This Event will be emitted when a  bid is made by a adress
+ event BidMade(
+        address indexed nftAdress,
+        uint256 indexed tokenId,
+        address indexed bidMakerAddress,
+        uint128 price
+    );
+
+//This Event will be emitted when a  auction winner receives the nft After the auction has ended
+ event WinNftAfterAuction(
+        address indexed nftAdress,
+        uint256 indexed tokenId,
+        address indexed nftWinnerAddress,
+        uint128 finalPrice
+    );
+
+
+ //This Event will be emitted when a  auction ended without no winner , and the seller of the nft gets
+ //the nft back to his address
+ event WithdrawNftAfterAuctionUnsuccesful(
+        address indexed nftAdress,
+        uint256 indexed tokenId,
+        address indexed nftsellerAddress,
+    );
+
+
+ //This Event will be emitted when a  auction ended with a succesful bid , and the seller of the nft gets
+ //the winning bid transferred to his wallet
+ event ReceiveWinningBidAfterAuction(
+        address indexed nftAdress,
+        uint256 indexed tokenId,
+        address indexed nftsellerAddress,
+        uint128 winning Bid
+        
+    );
+
        /*
     **************************************************************************************
 
@@ -141,8 +196,6 @@ contract Auction {
             msg.sender
         ] += msg.value;
     }
-
-
        /*
     **************************************************************************************
 
@@ -151,7 +204,6 @@ contract Auction {
     ***************************************************************************************
 
 */
-
 
     //This function will be called by nft auction winner and it will transfer the nft from contract 
     //to theadress of the nft winner
@@ -238,12 +290,7 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
                 .call{
                 value: nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid//At this point the temporary highestbid will become the highest bid
             }("");
-
   }
-
-    
-
-
 /*
     ******************************************************
 
@@ -252,7 +299,6 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
     ******************************************************
 
 */
-
 
     //This function will return a temporary highest bid for a specific Nft Auction
     //At the end of the auction it will automatically be the final price for which the nft has been sold
@@ -309,8 +355,6 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
         return nftContractAuctions[_nftContractAddress][_tokenId].nftSeller;
     }
 
-
-
     //This function will return the time at which the Auction started in epoch Time
 
     function getStartingTimeOfAuction(address _nftContractAddress, uint256 _tokenId)
@@ -331,7 +375,4 @@ nftContractAuctions[_nftContractAddress][_tokenId].minPrice==nftContractAuctions
     {
         return nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted;
     }
-
-
-
 }

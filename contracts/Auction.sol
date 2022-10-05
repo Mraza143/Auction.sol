@@ -285,12 +285,18 @@ nftContractAuctions[nftAddress][tokenId].minPrice==nftContractAuctions[nftAddres
         //receive their failed bids
 
         if (nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted) {
-            //We return the funds to the previous bid , as we already have a better bid
+           
+            nftContractAuctions[_nftContractAddress][_tokenId].s_addressToAmountFunded[
+            nftContractAuctions[_nftContractAddress][_tokenId].currentWinner
+        ] -= nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid;
+         //We return the funds to the previous bid , as we already have a better bid
             (bool success, ) = nftContractAuctions[_nftContractAddress][_tokenId]
                 .currentWinner
                 .call{
                 value: nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid
             }("");
+            require(success, "Transfer failed");
+
         }
         nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted = true;
         nftContractAuctions[_nftContractAddress][_tokenId].temporaryHighestBid = msg.value;
@@ -475,4 +481,37 @@ nftContractAuctions[nftAddress][tokenId].minPrice==nftContractAuctions[nftAddres
     {
         return nftContractAuctions[_nftContractAddress][_tokenId].auctionStarted;
     }
+
+
+
+//This function will return the address at a specific array of s_bidders
+
+    function getSpecificAddress(address _nftContractAddress, uint256 _tokenId, uint256 index)
+        public
+        view
+        returns (address)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].s_bidders[index];
+    }
+//This function will return the bid made by  an specific address
+
+    function getBidOfAnAddress(address _nftContractAddress, uint256 _tokenId, address sender )
+        public
+        view
+        returns (uint256)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].s_adressesToBid[sender];
+    }
+
+    //This function will return the bid made by  an specific address
+
+    function getAmountFundedByAnAddress(address _nftContractAddress, uint256 _tokenId, address sender )
+        public
+        view
+        returns (uint256)
+    {
+        return nftContractAuctions[_nftContractAddress][_tokenId].s_addressToAmountFunded[sender];
+    }
+
+
 }

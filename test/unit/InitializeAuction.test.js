@@ -17,6 +17,7 @@ describe("NFTAuction", function () {
   let NFTAuction;
   let nftAuction;
   let user1;
+  let user2;
 
   beforeEach(async () => {
 
@@ -55,7 +56,10 @@ describe("NFTAuction", function () {
 
   it("reverts if the msg.sender is not the nft owner", async function () {
     await expect(nftAuction.connect(user2).InitializeAuction(erc721.address, tokenId ,minPrice , interval)).to.be.revertedWith( // is reverted as raffle is calculating
-    "You dont own the nft"
+    "Auction__NotNftOwner()"
+    //await expect(
+    //  nftMarketplace.listItem(basicNft.address, TOKEN_ID, PRICE)
+    //  ).to.be.revertedWith("NotOwner")
 )
     /*expect(await nftAuction.connect(user2).InitializeAuction(erc721.address, tokenId ,minPrice , interval)).to.be.revertedWith(
       "You dont own the nft")*/
@@ -95,4 +99,14 @@ describe("NFTAuction", function () {
     const timestampB = bBefore.timestamp;
     assert.equal(auctionStartingTime, timestampB);
   });
+
+
+  it("emits an event when a auction is initialized", async function () {
+    //await nftAuction.connect(user1).InitializeAuction(erc721.address, tokenId ,minPrice , interval)
+    expect(await nftAuction.connect(user1).InitializeAuction(erc721.address, tokenId ,minPrice , interval)).to.emit(
+      "AuctionInitialized"
+  )
+  });
+
+
 });

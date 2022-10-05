@@ -38,16 +38,11 @@ describe("NFTAuction", function () {
   });
 
 
-
-
   it("Bid is reverted if we send less amount of eth than minimum Price", async function () {
     await expect(nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:lessThanMinPrice })).to.be.revertedWith( // is reverted as raffle is calculating
     "Auction__SendMoreToMakeBid"
 )
-
   });
-
-  //await network.provider.send("evm_increaseTime", [interval.toNumber() + 1])
 
   it("Bid is reverted if the auction is ended", async function () {
     await network.provider.send("evm_increaseTime", [interval + 1])
@@ -55,6 +50,69 @@ describe("NFTAuction", function () {
     "Auction__AuctionHasEnded"
 )
 
+  });
+
+  it("Initializes Auction started variable correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    const auctionStarted = await nftAuction.connect(user1).getStateOfAuction(erc721.address,tokenId)
+    assert.equal(auctionStarted, true)
+  });
+
+  it("Initializes Auction temporary highest  variable correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    const auctionTemporaryHighestBid = await nftAuction.connect(user1).getTemporaryHighestBid(erc721.address,tokenId)
+    assert.equal(auctionTemporaryHighestBid, minPrice)
+  });
+
+  it("updates Auction bidders array  variable correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    const auctionbiddersSpecificElement = await nftAuction.connect(user1).getSpecificAddress(erc721.address,tokenId , 0)
+    assert.equal(auctionbiddersSpecificElement, user1.address)
+  });
+
+
+  it("updates Auction current winner  variable correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    const auctionCurrentWinner = await nftAuction.connect(user1).getCurrentWinner(erc721.address,tokenId)
+    assert.equal(auctionCurrentWinner, user1.address)
+  });
+
+
+
+  it("updates the mapping of addresses to bid correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    const auctionLatestBid = await nftAuction.connect(user1).getBidOfAnAddress(erc721.address,tokenId, user1.address)
+    assert.equal(auctionLatestBid, minPrice)
+  });
+
+
+  it("updates the mapping of addresses to amount funded correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    const auctionLatestAmountFunded = await nftAuction.connect(user1).getAmountFundedByAnAddress(erc721.address,tokenId, user1.address)
+    assert.equal(auctionLatestAmountFunded, minPrice)
+  });
+
+  it("updates the mapping of addresses to amount funded after consecutive bids correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
+    
+    const auctionLatestAmountFunded = await nftAuction.connect(user1).getAmountFundedByAnAddress(erc721.address,tokenId, user1.address)
+    assert.equal(auctionLatestAmountFunded, minPrice+1)
+  });
+
+
+  it("updates the mapping of addresses to bid after consecutive bids correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice +10 })
+    const auctionLatestBid = await nftAuction.connect(user1).getBidOfAnAddress(erc721.address,tokenId, user1.address)
+    assert.equal(auctionLatestBid, minPrice + 10)
+  });
+
+
+  it("emits an event when a bid is initialized", async function () {
+    expect(await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })).to.emit(
+      "BidMade"
+  )
   });
 
 });

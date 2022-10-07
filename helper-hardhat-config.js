@@ -29,8 +29,8 @@ const networkConfig = {
 const developmentChains = ["hardhat", "localhost"]
 const VERIFICATION_BLOCK_CONFIRMATIONS = 6
 //F:\Ethereum\32  Hours\Next js Lottery Front end\lotteryfrontend\constants
-const frontEndContractsFile = "../nextjslotteryfrontend/lotteryfrontend/constants/contractAddresses.json"
-const frontEndAbiFile = "../nextjslotteryfrontend/lotteryfrontend/constants/abi.json"
+const frontEndContractsFile = "../auctionfrontend/constants/contractAddresses.json"
+const frontEndAbiFile = "../auctionfrontend/constants/abi.json"
 
 module.exports = {
     networkConfig,

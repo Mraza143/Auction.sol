@@ -139,7 +139,7 @@ modifier isBidValid(
         uint256 tokenId,
         uint256 bidAmount
     ) {
-        if (bidAmount < nftContractAuctions[nftAddress][tokenId].temporaryHighestBid
+        if (bidAmount <= nftContractAuctions[nftAddress][tokenId].temporaryHighestBid
         ) {
             revert Auction__SendMoreToMakeBid();
         }

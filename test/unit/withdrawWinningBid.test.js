@@ -20,9 +20,9 @@ describe("NFTAuction", function () {
   let user2;
 
   beforeEach(async () => {
-
-    ERC721 = await ethers.getContractFactory("ERC721Mock");
     NFTAuction = await ethers.getContractFactory("Auction");
+    ERC721 = await ethers.getContractFactory("ERC721Mock");
+
     [ContractOwner, user1, user2, user3, testArtist, testPlatform] =
       await ethers.getSigners();
     erc721 = await ERC721.deploy();
@@ -49,7 +49,7 @@ describe("NFTAuction", function () {
   });
 
   it("function is reverted if the caller is not the nft auction seller 2", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice + 1 })
     await network.provider.send("evm_increaseTime", [interval + 1])
 
     await expect(nftAuction.connect(user2).withdrawWinningBid(erc721.address, tokenId)).to.be.revertedWith( // is reverted as raffle is calculating

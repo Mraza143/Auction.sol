@@ -38,7 +38,7 @@ describe("NFTAuction", function () {
 
 
   it("function is reverted if the auction has not ended yet", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     //await network.provider.send("evm_increaseTime", [interval + 1])
 
     await expect(nftAuction.connect(user1).receiveNft(erc721.address, tokenId)).to.be.revertedWith( // is reverted as raffle is calculating
@@ -47,7 +47,7 @@ describe("NFTAuction", function () {
   });
 
   it("function is reverted if the caller is not the auction winner", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     await network.provider.send("evm_increaseTime", [interval + 1])
 
     await expect(nftAuction.connect(user2).receiveNft(erc721.address, tokenId)).to.be.revertedWith( // is reverted as raffle is calculating
@@ -57,7 +57,7 @@ describe("NFTAuction", function () {
 
 
   it("nft is transferred from the contract to the auction winner", async function () {
-    await nftAuction.connect(user2).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user2).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     await network.provider.send("evm_increaseTime", [interval + 1])
     await nftAuction.connect(user2).receiveNft(erc721.address, tokenId)
     const newOwner = await erc721.ownerOf(tokenId);
@@ -65,7 +65,7 @@ describe("NFTAuction", function () {
   });
 
   it("emits an event when  receive nft is called", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     await network.provider.send("evm_increaseTime", [interval + 1])
 
     expect(await nftAuction.connect(user1).receiveNft(erc721.address, tokenId)).to.emit(

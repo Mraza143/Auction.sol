@@ -10,8 +10,6 @@ const interval = 86;
 
 
 
-// Deploy and create a mock erc721 contract.
-// 1 basic test, NFT sent from one person to another works correctly.
 describe("NFTAuction", function () {
   let ERC721;
   let erc721;
@@ -46,33 +44,33 @@ describe("NFTAuction", function () {
 
   it("Bid is reverted if the auction is ended", async function () {
     await network.provider.send("evm_increaseTime", [interval + 1])
-    await expect(nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })).to.be.revertedWith( // is reverted as raffle is calculating
+    await expect(nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })).to.be.revertedWith( // is reverted as raffle is calculating
     "Auction__AuctionHasEnded"
 )
 
   });
 
   it("Initializes Auction started variable correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     const auctionStarted = await nftAuction.connect(user1).getStateOfAuction(erc721.address,tokenId)
     assert.equal(auctionStarted, true)
   });
 
   it("Initializes Auction temporary highest  variable correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     const auctionTemporaryHighestBid = await nftAuction.connect(user1).getTemporaryHighestBid(erc721.address,tokenId)
-    assert.equal(auctionTemporaryHighestBid, minPrice)
+    assert.equal(auctionTemporaryHighestBid, minPrice +1)
   });
 
   it("updates Auction bidders array  variable correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     const auctionbiddersSpecificElement = await nftAuction.connect(user1).getSpecificAddress(erc721.address,tokenId , 0)
     assert.equal(auctionbiddersSpecificElement, user1.address)
   });
 
 
   it("updates Auction current winner  variable correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     const auctionCurrentWinner = await nftAuction.connect(user1).getCurrentWinner(erc721.address,tokenId)
     assert.equal(auctionCurrentWinner, user1.address)
   });
@@ -80,29 +78,29 @@ describe("NFTAuction", function () {
 
 
   it("updates the mapping of addresses to bid correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
     const auctionLatestBid = await nftAuction.connect(user1).getBidOfAnAddress(erc721.address,tokenId, user1.address)
-    assert.equal(auctionLatestBid, minPrice)
+    assert.equal(auctionLatestBid, minPrice+1)
   });
 
 
   it("updates the mapping of addresses to amount funded correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
-    const auctionLatestAmountFunded = await nftAuction.connect(user1).getAmountFundedByAnAddress(erc721.address,tokenId, user1.address)
-    assert.equal(auctionLatestAmountFunded, minPrice)
-  });
-
-  it("updates the mapping of addresses to amount funded after consecutive bids correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
     await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
-    
     const auctionLatestAmountFunded = await nftAuction.connect(user1).getAmountFundedByAnAddress(erc721.address,tokenId, user1.address)
     assert.equal(auctionLatestAmountFunded, minPrice+1)
   });
 
+  it("updates the mapping of addresses to amount funded after consecutive bids correctly", async function () {
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+1 })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+2 })
+    
+    const auctionLatestAmountFunded = await nftAuction.connect(user1).getAmountFundedByAnAddress(erc721.address,tokenId, user1.address)
+    assert.equal(auctionLatestAmountFunded, minPrice+2)
+  });
+
 
   it("updates the mapping of addresses to bid after consecutive bids correctly", async function () {
-    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })
+    await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice+2 })
     await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice +10 })
     const auctionLatestBid = await nftAuction.connect(user1).getBidOfAnAddress(erc721.address,tokenId, user1.address)
     assert.equal(auctionLatestBid, minPrice + 10)
@@ -110,7 +108,7 @@ describe("NFTAuction", function () {
 
 
   it("emits an event when a bid is initialized", async function () {
-    expect(await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice })).to.emit(
+    expect(await nftAuction.connect(user1).makeBid(erc721.address, tokenId ,{value:minPrice +1 })).to.emit(
       "BidMade"
   )
   });

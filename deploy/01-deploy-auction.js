@@ -1,5 +1,5 @@
 const { network } = require("hardhat")
-const { networkConfig, developmentChains } = require("../helper-hardhat-config")
+const { networkConfig, developmentChains ,VERIFICATION_BLOCK_CONFIRMATIONS } = require("../helper-hardhat-config")
 const { verify } = require("../utils/verify")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
@@ -14,7 +14,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         args: [],
         log: true,
         // we need to wait if on a live network so we can verify properly
-        waitConfirmations: network.config.blockConfirmations || 1,
+        waitConfirmations: VERIFICATION_BLOCK_CONFIRMATIONS || 1,
     })
     log(`Auction deployed at ${auction.address}`)
 
